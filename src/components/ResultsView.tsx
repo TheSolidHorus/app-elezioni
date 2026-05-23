@@ -1,0 +1,219 @@
+import { useEffect, useState } from 'react'
+import { BarChart2, Download, FileText, AlertCircle, RefreshCw } from 'lucide-react'
+import { fetchAggregatedResults, fetchGlobalTotals, type AggregatedResult } from '../lib/api'
+
+type GlobalTotals = { nulli: number; bianchi: number; solo_sindaco: number }
+
+export function ResultsView() {
+  const [results, setResults] = useState<AggregatedResult[]>([])
+  const [globalTotals, setGlobalTotals] = useState<GlobalTotals | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = async () => {
+    try {
+      setError(null)
+      setLoading(true)
+      const [res, totals] = await Promise.all([
+        fetchAggregatedResults(),
+        fetchGlobalTotals(),
+      ])
+      // Ordina per preferenze decrescenti
+      setResults(res.sort((a, b) => b.totalPreferenze - a.totalPreferenze))
+      setGlobalTotals(totals)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Errore caricamento risultati')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const totalPreferenze = results.reduce((s, r) => s + r.totalPreferenze, 0)
+  const totalLista = results.reduce((s, r) => s + r.totalLista, 0)
+  const totalSchede = totalPreferenze + totalLista
+    + (globalTotals ? globalTotals.nulli + globalTotals.bianchi + globalTotals.solo_sindaco : 0)
+
+  const exportCSV = () => {
+    const rows = [
+      ['Elezioni Comunali - San Cipriano d\'Aversa'],
+      [`Data: ${new Date().toLocaleDateString('it-IT')}`],
+      [`Totale schede: ${totalSchede}`],
+      [''],
+      ['#', 'Candidato', 'Voti Lista', 'Preferenze', 'Totale'],
+      ...results.map((r, i) => [
+        i + 1,
+        `"${r.candidate.name}"`,
+        r.totalLista,
+        r.totalPreferenze,
+        r.totalLista + r.totalPreferenze,
+      ]),
+      [''],
+      ['Voti Nulli', globalTotals?.nulli ?? 0],
+      ['Schede Bianche', globalTotals?.bianchi ?? 0],
+      ['Solo Sindaco', globalTotals?.solo_sindaco ?? 0],
+    ]
+    const csv = rows.map((r) => r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `risultati-elezioni-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportPDF = async () => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ])
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(16)
+    doc.text("Elezioni Comunali — San Cipriano d'Aversa", 14, 18)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 14, 26)
+    doc.text(`Totale schede: ${totalSchede}`, 14, 32)
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['#', 'Candidato', 'Voti Lista', 'Preferenze', 'Totale']],
+      body: results.map((r, i) => [
+        i + 1,
+        r.candidate.name,
+        r.totalLista,
+        r.totalPreferenze,
+        r.totalLista + r.totalPreferenze,
+      ]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+    })
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    doc.setFont('helvetica', 'bold')
+    doc.text('Riepilogo sezioni', 14, finalY)
+    autoTable(doc, {
+      startY: finalY + 4,
+      head: [['Tipo', 'Totale']],
+      body: [
+        ['Voti Nulli', globalTotals?.nulli ?? 0],
+        ['Schede Bianche', globalTotals?.bianchi ?? 0],
+        ['Solo Sindaco', globalTotals?.solo_sindaco ?? 0],
+      ],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [71, 85, 105], textColor: 255 },
+    })
+
+    doc.save(`risultati-elezioni-${new Date().toISOString().slice(0, 10)}.pdf`)
+  }
+
+  if (loading) {
+    return (
+      <div className="state-loading">
+        <div className="spinner" />
+        <span>Caricamento risultati...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-error global-error">
+        <AlertCircle size={16} />
+        {error}
+        <button className="btn-retry" onClick={load}>
+          <RefreshCw size={14} /> Riprova
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <section className="results-section">
+      <div className="results-header">
+        <h2 className="results-title">
+          <BarChart2 size={20} /> Risultati Aggregati — Tutte le Sezioni
+        </h2>
+        <button className="btn-retry" onClick={load} style={{ alignSelf: 'flex-start' }}>
+          <RefreshCw size={13} /> Aggiorna
+        </button>
+      </div>
+
+      {/* Banner totali globali */}
+      <div className="results-totals-bar">
+        <div className="results-total-chip">
+          <span className="rtc-label">Totale Schede</span>
+          <span className="rtc-value">{totalSchede}</span>
+        </div>
+        <div className="results-total-chip chip-red">
+          <span className="rtc-label">🚫 Nulli</span>
+          <span className="rtc-value">{globalTotals?.nulli ?? 0}</span>
+        </div>
+        <div className="results-total-chip chip-amber">
+          <span className="rtc-label">⬜ Bianchi</span>
+          <span className="rtc-value">{globalTotals?.bianchi ?? 0}</span>
+        </div>
+        <div className="results-total-chip chip-purple">
+          <span className="rtc-label">👤 Solo Sindaco</span>
+          <span className="rtc-value">{globalTotals?.solo_sindaco ?? 0}</span>
+        </div>
+      </div>
+
+      {/* Tabella candidati */}
+      <div className="results-table-wrap">
+        <table className="results-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Candidato</th>
+              <th>Voti Lista</th>
+              <th>Preferenze</th>
+              <th>Totale</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((r, i) => {
+              const tot = r.totalLista + r.totalPreferenze
+              const pct = totalPreferenze > 0
+                ? ((r.totalPreferenze / totalPreferenze) * 100).toFixed(1)
+                : '0.0'
+              return (
+                <tr key={r.candidate.id} className={i === 0 ? 'row-first' : ''}>
+                  <td className="td-rank">
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                  </td>
+                  <td className="td-name">
+                    {r.candidate.name}
+                    {r.candidate.is_sindaco && (
+                      <span className="sindaco-tag">Sindaco</span>
+                    )}
+                  </td>
+                  <td className="td-votes">{r.totalLista}</td>
+                  <td className="td-votes">{r.totalPreferenze}</td>
+                  <td className="td-votes td-total">
+                    {tot}
+                    <span className="td-pct">{pct}%</span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Export */}
+      <div className="export-buttons">
+        <button className="btn-export btn-csv" onClick={exportCSV}>
+          <Download size={16} /> CSV
+        </button>
+        <button className="btn-export btn-pdf" onClick={exportPDF}>
+          <FileText size={16} /> PDF
+        </button>
+      </div>
+    </section>
+  )
+}
