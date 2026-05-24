@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, RefreshCw, AlertCircle, Minus, Plus, Crown } from 'lucide-react'
+import { ArrowLeft, RefreshCw, AlertCircle, Minus, Plus, Crown, Share2, Check } from 'lucide-react'
 import type { Section, VoteField, TotalField } from '../lib/supabase'
 import { useSection } from '../hooks/useSection'
 import { StatusBadge } from './StatusBadge'
@@ -38,6 +38,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
   } = useSection(section.id)
 
   const [resetConfirm, setResetConfirm] = useState(false)
+  const [copiedCandidateId, setCopiedCandidateId] = useState<number | null>(null)
   const [pending, setPending] = useState<string | null>(null)  // "voteId-field" or "total-field"
 
   // Calcola totale schede per la sezione
@@ -167,7 +168,44 @@ export function SectionVotePanel({ section, onBack }: Props) {
                     <div className="cvcard-header">
                       <div className="cvcard-rank">{idx + 1}</div>
                       <div className="cvcard-name-wrap">
-                        <span className="cvcard-name">{candidate.name}</span>
+                        <span className="cvcard-name">
+                          {candidate.name}
+                          <button
+                            className={`copy-link-btn ${copiedCandidateId === candidate.id ? 'copied' : ''}`}
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              const url = `${window.location.origin}/sezione/${section.id}/vota/${candidate.id}`
+                              try {
+                                await navigator.clipboard.writeText(url)
+                                setCopiedCandidateId(candidate.id)
+                                setTimeout(() => setCopiedCandidateId(null), 2000)
+                              } catch (err) {
+                                console.error('Errore copia link:', err)
+                              }
+                            }}
+                            title="Copia link di voto singolo per questo candidato"
+                            aria-label="Copia link di voto singolo"
+                            style={{
+                              marginLeft: '8px',
+                              padding: '2px 6px',
+                              fontSize: '0.62rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              border: '1px solid var(--border-light)',
+                              borderRadius: '4px',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              verticalAlign: 'middle',
+                              color: 'var(--text-muted)',
+                              fontFamily: 'inherit',
+                              fontWeight: 600
+                            }}
+                          >
+                            {copiedCandidateId === candidate.id ? <Check size={9} /> : <Share2 size={9} />}
+                            <span>{copiedCandidateId === candidate.id ? 'Copiato!' : 'Link'}</span>
+                          </button>
+                        </span>
                         {candidate.is_sindaco && (
                           <span className="cvcard-sindaco">
                             <Crown size={12} /> Sindaco

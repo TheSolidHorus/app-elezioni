@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { RefreshCw, AlertCircle } from 'lucide-react'
 import type { Section } from '../lib/supabase'
 import { SectionCard } from './SectionCard'
 import { useSections } from '../hooks/useSections'
+import { fetchAggregatedResults } from '../lib/api'
 
 interface Props {
   onOpenSection: (section: Section) => void
@@ -9,6 +11,20 @@ interface Props {
 
 export function SectionDashboard({ onOpenSection }: Props) {
   const { sections, loading, error, reload } = useSections()
+  const [totalVotiLista, setTotalVotiLista] = useState<number | null>(null)
+
+  useEffect(() => {
+    async function loadTotal() {
+      try {
+        const results = await fetchAggregatedResults()
+        const total = results.reduce((acc, curr) => acc + curr.totalLista, 0)
+        setTotalVotiLista(total)
+      } catch (e) {
+        console.error('Errore nel caricamento dei voti di lista:', e)
+      }
+    }
+    loadTotal()
+  }, [])
 
   if (loading) {
     return (
@@ -34,7 +50,9 @@ export function SectionDashboard({ onOpenSection }: Props) {
   return (
     <div className="section-dashboard">
       <div className="dashboard-intro">
-        <h2 className="dashboard-title">Seleziona Sezione</h2>
+        <h2 className="dashboard-title">
+          Totale Voti di Lista: {totalVotiLista === null ? '...' : totalVotiLista}
+        </h2>
         <p className="dashboard-subtitle">
           Scegli la sezione da aprire per iniziare il conteggio dei voti
         </p>
