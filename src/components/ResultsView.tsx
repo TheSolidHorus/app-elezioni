@@ -30,8 +30,9 @@ export function ResultsView() {
 
   useEffect(() => { load() }, [])
 
-  const totalPreferenze = results.reduce((s, r) => s + r.totalPreferenze, 0)
-  const totalLista = results.reduce((s, r) => s + r.totalLista, 0)
+  const filteredResults = results.filter((r) => r.candidate.is_sindaco)
+  const totalPreferenze = filteredResults.reduce((s, r) => s + r.totalPreferenze, 0)
+  const totalLista = filteredResults.reduce((s, r) => s + r.totalLista, 0)
   const totalSchede = totalPreferenze + totalLista
     + (globalTotals ? globalTotals.nulli + globalTotals.bianchi + globalTotals.solo_sindaco : 0)
 
@@ -41,8 +42,8 @@ export function ResultsView() {
       [`Data: ${new Date().toLocaleDateString('it-IT')}`],
       [`Totale schede: ${totalSchede}`],
       [''],
-      ['#', 'Candidato', 'Voti Lista', 'Preferenze', 'Totale'],
-      ...results.map((r, i) => [
+      ['#', 'Sindaco', 'Voti Lista', 'Preferenze', 'Totale'],
+      ...filteredResults.map((r, i) => [
         i + 1,
         `"${r.candidate.name}"`,
         r.totalLista,
@@ -80,8 +81,8 @@ export function ResultsView() {
 
     autoTable(doc, {
       startY: 40,
-      head: [['#', 'Candidato', 'Voti Lista', 'Preferenze', 'Totale']],
-      body: results.map((r, i) => [
+      head: [['#', 'Sindaco', 'Voti Lista', 'Preferenze', 'Totale']],
+      body: filteredResults.map((r, i) => [
         i + 1,
         r.candidate.name,
         r.totalLista,
@@ -169,14 +170,14 @@ export function ResultsView() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Candidato</th>
+              <th>Sindaco</th>
               <th>Voti Lista</th>
               <th>Preferenze</th>
               <th>Totale</th>
             </tr>
           </thead>
           <tbody>
-            {results.map((r, i) => {
+            {filteredResults.map((r, i) => {
               const tot = r.totalLista + r.totalPreferenze
               const pct = totalPreferenze > 0
                 ? ((r.totalPreferenze / totalPreferenze) * 100).toFixed(1)
