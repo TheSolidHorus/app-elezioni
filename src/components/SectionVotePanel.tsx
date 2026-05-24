@@ -16,7 +16,6 @@ const VOTE_FIELDS: { field: VoteField; label: string; color: string }[] = [
 const TOTAL_FIELDS: { field: TotalField; label: string; color: string; emoji: string }[] = [
   { field: 'nulli', label: 'Voti Nulli', color: 'red', emoji: '🚫' },
   { field: 'bianchi', label: 'Schede Bianche', color: 'amber', emoji: '⬜' },
-  { field: 'solo_sindaco', label: 'Solo Sindaco', color: 'purple', emoji: '👤' },
 ]
 
 export function SectionVotePanel({ section, onBack }: Props) {
@@ -42,7 +41,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
 
   // Calcola totale schede per la sezione
   const totalSchede = votes.reduce((s, v) => s + v.lista, 0)
-    + (total ? total.nulli + total.bianchi + total.solo_sindaco : 0)
+    + (total ? total.nulli + total.bianchi : 0)
 
   const makeVoteKey = (voteId: string, field: VoteField) => `${voteId}-${field}`
   const makeTotalKey = (field: TotalField) => `total-${field}`

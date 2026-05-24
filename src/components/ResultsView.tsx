@@ -33,7 +33,7 @@ export function ResultsView() {
   const filteredResults = results.filter((r) => r.candidate.is_sindaco)
   const totalLista = filteredResults.reduce((s, r) => s + r.totalLista, 0)
   const totalSchede = totalLista
-    + (globalTotals ? globalTotals.nulli + globalTotals.bianchi + globalTotals.solo_sindaco : 0)
+    + (globalTotals ? globalTotals.nulli + globalTotals.bianchi : 0)
 
   const exportCSV = () => {
     const rows = [
@@ -50,7 +50,6 @@ export function ResultsView() {
       [''],
       ['Voti Nulli', globalTotals?.nulli ?? 0],
       ['Schede Bianche', globalTotals?.bianchi ?? 0],
-      ['Solo Sindaco', globalTotals?.solo_sindaco ?? 0],
     ]
     const csv = rows.map((r) => r.join(',')).join('\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -98,7 +97,6 @@ export function ResultsView() {
       body: [
         ['Voti Nulli', globalTotals?.nulli ?? 0],
         ['Schede Bianche', globalTotals?.bianchi ?? 0],
-        ['Solo Sindaco', globalTotals?.solo_sindaco ?? 0],
       ],
       styles: { fontSize: 9 },
       headStyles: { fillColor: [71, 85, 105], textColor: 255 },
@@ -153,10 +151,7 @@ export function ResultsView() {
           <span className="rtc-label">⬜ Bianchi</span>
           <span className="rtc-value">{globalTotals?.bianchi ?? 0}</span>
         </div>
-        <div className="results-total-chip chip-purple">
-          <span className="rtc-label">👤 Solo Sindaco</span>
-          <span className="rtc-value">{globalTotals?.solo_sindaco ?? 0}</span>
-        </div>
+
       </div>
 
       {/* Tabella candidati */}
