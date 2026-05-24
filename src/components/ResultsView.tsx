@@ -18,8 +18,8 @@ export function ResultsView() {
         fetchAggregatedResults(),
         fetchGlobalTotals(),
       ])
-      // Ordina per preferenze decrescenti
-      setResults(res.sort((a, b) => b.totalPreferenze - a.totalPreferenze))
+      // Ordina per voti lista decrescenti
+      setResults(res.sort((a, b) => b.totalLista - a.totalLista))
       setGlobalTotals(totals)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Errore caricamento risultati')
@@ -31,9 +31,8 @@ export function ResultsView() {
   useEffect(() => { load() }, [])
 
   const filteredResults = results.filter((r) => r.candidate.is_sindaco)
-  const totalPreferenze = filteredResults.reduce((s, r) => s + r.totalPreferenze, 0)
   const totalLista = filteredResults.reduce((s, r) => s + r.totalLista, 0)
-  const totalSchede = totalPreferenze + totalLista
+  const totalSchede = totalLista
     + (globalTotals ? globalTotals.nulli + globalTotals.bianchi + globalTotals.solo_sindaco : 0)
 
   const exportCSV = () => {
@@ -42,13 +41,11 @@ export function ResultsView() {
       [`Data: ${new Date().toLocaleDateString('it-IT')}`],
       [`Totale schede: ${totalSchede}`],
       [''],
-      ['#', 'Sindaco', 'Voti Lista', 'Preferenze', 'Totale'],
+      ['#', 'Sindaco', 'Voti Lista'],
       ...filteredResults.map((r, i) => [
         i + 1,
         `"${r.candidate.name}"`,
         r.totalLista,
-        r.totalPreferenze,
-        r.totalLista + r.totalPreferenze,
       ]),
       [''],
       ['Voti Nulli', globalTotals?.nulli ?? 0],
@@ -81,13 +78,11 @@ export function ResultsView() {
 
     autoTable(doc, {
       startY: 40,
-      head: [['#', 'Sindaco', 'Voti Lista', 'Preferenze', 'Totale']],
+      head: [['#', 'Sindaco', 'Voti Lista']],
       body: filteredResults.map((r, i) => [
         i + 1,
         r.candidate.name,
         r.totalLista,
-        r.totalPreferenze,
-        r.totalLista + r.totalPreferenze,
       ]),
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [30, 64, 175], textColor: 255 },
@@ -172,15 +167,13 @@ export function ResultsView() {
               <th>#</th>
               <th>Sindaco</th>
               <th>Voti Lista</th>
-              <th>Preferenze</th>
-              <th>Totale</th>
             </tr>
           </thead>
           <tbody>
             {filteredResults.map((r, i) => {
-              const tot = r.totalLista + r.totalPreferenze
-              const pct = totalPreferenze > 0
-                ? ((r.totalPreferenze / totalPreferenze) * 100).toFixed(1)
+              const tot = r.totalLista
+              const pct = totalLista > 0
+                ? ((r.totalLista / totalLista) * 100).toFixed(1)
                 : '0.0'
               return (
                 <tr key={r.candidate.id} className={i === 0 ? 'row-first' : ''}>
@@ -193,8 +186,6 @@ export function ResultsView() {
                       <span className="sindaco-tag">Sindaco</span>
                     )}
                   </td>
-                  <td className="td-votes">{r.totalLista}</td>
-                  <td className="td-votes">{r.totalPreferenze}</td>
                   <td className="td-votes td-total">
                     {tot}
                     <span className="td-pct">{pct}%</span>

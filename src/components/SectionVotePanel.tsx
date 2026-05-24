@@ -11,7 +11,6 @@ interface Props {
 
 const VOTE_FIELDS: { field: VoteField; label: string; color: string }[] = [
   { field: 'lista', label: 'Voti Lista', color: 'blue' },
-  { field: 'preferenze', label: 'Preferenze', color: 'green' },
 ]
 
 const TOTAL_FIELDS: { field: TotalField; label: string; color: string; emoji: string }[] = [
@@ -42,7 +41,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
   const [pending, setPending] = useState<string | null>(null)  // "voteId-field" or "total-field"
 
   // Calcola totale schede per la sezione
-  const totalSchede = votes.reduce((s, v) => s + v.lista + v.preferenze, 0)
+  const totalSchede = votes.reduce((s, v) => s + v.lista, 0)
     + (total ? total.nulli + total.bianchi + total.solo_sindaco : 0)
 
   const makeVoteKey = (voteId: string, field: VoteField) => `${voteId}-${field}`
@@ -261,7 +260,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
                             )}
                           </div>
                           <div className="cvcard-subtotal">
-                            Totale: <strong>{voteRow.lista + voteRow.preferenze}</strong>
+                            Totale: <strong>{voteRow.lista}</strong>
                           </div>
                         </div>
 
