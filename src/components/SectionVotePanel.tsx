@@ -10,14 +10,14 @@ interface Props {
 }
 
 const VOTE_FIELDS: { field: VoteField; label: string; color: string }[] = [
-  { field: 'lista',     label: 'Voti Lista',   color: 'blue'  },
-  { field: 'preferenze',label: 'Preferenze',   color: 'green' },
+  { field: 'lista', label: 'Voti Lista', color: 'blue' },
+  { field: 'preferenze', label: 'Preferenze', color: 'green' },
 ]
 
 const TOTAL_FIELDS: { field: TotalField; label: string; color: string; emoji: string }[] = [
-  { field: 'nulli',        label: 'Voti Nulli',      color: 'red',    emoji: '🚫' },
-  { field: 'bianchi',      label: 'Schede Bianche',  color: 'amber',  emoji: '⬜' },
-  { field: 'solo_sindaco', label: 'Solo Sindaco',     color: 'purple', emoji: '👤' },
+  { field: 'nulli', label: 'Voti Nulli', color: 'red', emoji: '🚫' },
+  { field: 'bianchi', label: 'Schede Bianche', color: 'amber', emoji: '⬜' },
+  { field: 'solo_sindaco', label: 'Solo Sindaco', color: 'purple', emoji: '👤' },
 ]
 
 export function SectionVotePanel({ section, onBack }: Props) {
@@ -122,7 +122,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
             if (!candidate || !voteRow) return null
             const key = makeVoteKey(voteRow.id, 'lista')
             const current = voteRow.lista
-            
+
             return (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
                 <div className="totals-block" style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '30px 20px', gap: '20px' }}>
@@ -130,7 +130,7 @@ export function SectionVotePanel({ section, onBack }: Props) {
                   <span className="total-field-count" style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
                     {current}
                   </span>
-                  
+
                   <div style={{ display: 'flex', gap: '15px', width: '100%', justifyContent: 'center' }}>
                     <button
                       className="vp-remove-btn"
@@ -199,105 +199,110 @@ export function SectionVotePanel({ section, onBack }: Props) {
             </div>
           )}
 
-          {/* ====== CANDIDATI ====== */}
-          <div className="candidates-block">
-            <h3 className="block-title">Candidati ({candidates.length})</h3>
-            <div className="candidates-vote-list">
-              {candidates.map((candidate, idx) => {
-                const voteRow = votes.find((v) => v.candidate_id === candidate.id)
-                if (!voteRow) return null
+          {/* ====== CANDIDATI (SOLO SINDACI) ====== */}
+          {(() => {
+            const mayors = candidates.filter((c) => c.is_sindaco)
+            return (
+              <div className="candidates-block">
+                <h3 className="block-title">Sindaci ({mayors.length})</h3>
+                <div className="candidates-vote-list">
+                  {mayors.map((candidate, idx) => {
+                    const voteRow = votes.find((v) => v.candidate_id === candidate.id)
+                    if (!voteRow) return null
 
-                return (
-                  <div key={candidate.id} className="candidate-vote-card">
-                    {/* Nome candidato */}
-                    <div className="cvcard-header">
-                      <div className="cvcard-rank">{idx + 1}</div>
-                      <div className="cvcard-name-wrap">
-                        <span className="cvcard-name">
-                          {candidate.name}
-                          <button
-                            className={`copy-link-btn ${copiedCandidateId === candidate.id ? 'copied' : ''}`}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              const url = `${window.location.origin}/sezione/${section.id}/vota/${candidate.id}`
-                              try {
-                                await navigator.clipboard.writeText(url)
-                                setCopiedCandidateId(candidate.id)
-                                setTimeout(() => setCopiedCandidateId(null), 2000)
-                              } catch (err) {
-                                console.error('Errore copia link:', err)
-                              }
-                            }}
-                            title="Copia link di voto singolo per questo candidato"
-                            aria-label="Copia link di voto singolo"
-                            style={{
-                              marginLeft: '8px',
-                              padding: '2px 6px',
-                              fontSize: '0.62rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              border: '1px solid var(--border-light)',
-                              borderRadius: '4px',
-                              background: 'transparent',
-                              cursor: 'pointer',
-                              verticalAlign: 'middle',
-                              color: 'var(--text-muted)',
-                              fontFamily: 'inherit',
-                              fontWeight: 600
-                            }}
-                          >
-                            {copiedCandidateId === candidate.id ? <Check size={9} /> : <Share2 size={9} />}
-                            <span>{copiedCandidateId === candidate.id ? 'Copiato!' : 'Link'}</span>
-                          </button>
-                        </span>
-                        {candidate.is_sindaco && (
-                          <span className="cvcard-sindaco">
-                            <Crown size={12} /> Sindaco
-                          </span>
-                        )}
-                      </div>
-                      <div className="cvcard-subtotal">
-                        Totale: <strong>{voteRow.lista + voteRow.preferenze}</strong>
-                      </div>
-                    </div>
-
-                    {/* Righe voto: Lista + Preferenze */}
-                    <div className="cvcard-fields">
-                      {VOTE_FIELDS.map(({ field, label, color }) => {
-                        const current = voteRow[field]
-                        const key = makeVoteKey(voteRow.id, field)
-                        return (
-                          <div key={field} className={`cvcard-field cvcard-field-${color}`}>
-                            <span className="cvcard-field-label">{label}</span>
-                            <div className="cvcard-field-controls">
+                    return (
+                      <div key={candidate.id} className="candidate-vote-card">
+                        {/* Nome candidato */}
+                        <div className="cvcard-header">
+                          <div className="cvcard-rank">{idx + 1}</div>
+                          <div className="cvcard-name-wrap">
+                            <span className="cvcard-name">
+                              {candidate.name}
                               <button
-                                className="small-vote-btn small-btn-dec"
-                                onClick={() => onDec(voteRow.id, field, current)}
-                                disabled={current <= 0 || pending === key}
-                                aria-label={`Riduci ${label} per ${candidate.name}`}
+                                className={`copy-link-btn ${copiedCandidateId === candidate.id ? 'copied' : ''}`}
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  const url = `${window.location.origin}/sezione/${section.id}/vota/${candidate.id}`
+                                  try {
+                                    await navigator.clipboard.writeText(url)
+                                    setCopiedCandidateId(candidate.id)
+                                    setTimeout(() => setCopiedCandidateId(null), 2000)
+                                  } catch (err) {
+                                    console.error('Errore copia link:', err)
+                                  }
+                                }}
+                                title="Copia link di voto singolo per questo candidato"
+                                aria-label="Copia link di voto singolo"
+                                style={{
+                                  marginLeft: '8px',
+                                  padding: '2px 6px',
+                                  fontSize: '0.62rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  border: '1px solid var(--border-light)',
+                                  borderRadius: '4px',
+                                  background: 'transparent',
+                                  cursor: 'pointer',
+                                  verticalAlign: 'middle',
+                                  color: 'var(--text-muted)',
+                                  fontFamily: 'inherit',
+                                  fontWeight: 600
+                                }}
                               >
-                                <Minus size={14} strokeWidth={3} />
+                                {copiedCandidateId === candidate.id ? <Check size={9} /> : <Share2 size={9} />}
+                                <span>{copiedCandidateId === candidate.id ? 'Copiato!' : 'Link'}</span>
                               </button>
-                              <span className="cvcard-field-count">{current}</span>
-                              <button
-                                className="small-vote-btn small-btn-inc"
-                                onClick={() => onInc(voteRow.id, field, current)}
-                                disabled={pending === key}
-                                aria-label={`Aggiungi ${label} per ${candidate.name}`}
-                              >
-                                <Plus size={14} strokeWidth={3} />
-                              </button>
-                            </div>
+                            </span>
+                            {candidate.is_sindaco && (
+                              <span className="cvcard-sindaco">
+                                <Crown size={12} /> Sindaco
+                              </span>
+                            )}
                           </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+                          <div className="cvcard-subtotal">
+                            Totale: <strong>{voteRow.lista + voteRow.preferenze}</strong>
+                          </div>
+                        </div>
+
+                        {/* Righe voto: Lista + Preferenze */}
+                        <div className="cvcard-fields">
+                          {VOTE_FIELDS.map(({ field, label, color }) => {
+                            const current = voteRow[field]
+                            const key = makeVoteKey(voteRow.id, field)
+                            return (
+                              <div key={field} className={`cvcard-field cvcard-field-${color}`}>
+                                <span className="cvcard-field-label">{label}</span>
+                                <div className="cvcard-field-controls">
+                                  <button
+                                    className="small-vote-btn small-btn-dec"
+                                    onClick={() => onDec(voteRow.id, field, current)}
+                                    disabled={current <= 0 || pending === key}
+                                    aria-label={`Riduci ${label} per ${candidate.name}`}
+                                  >
+                                    <Minus size={14} strokeWidth={3} />
+                                  </button>
+                                  <span className="cvcard-field-count">{current}</span>
+                                  <button
+                                    className="small-vote-btn small-btn-inc"
+                                    onClick={() => onInc(voteRow.id, field, current)}
+                                    disabled={pending === key}
+                                    aria-label={`Aggiungi ${label} per ${candidate.name}`}
+                                  >
+                                    <Plus size={14} strokeWidth={3} />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* ====== RESET SEZIONE ====== */}
           <div className="reset-zone">
