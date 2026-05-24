@@ -112,6 +112,51 @@ export function SectionVotePanel({ section, onBack }: Props) {
           <div className="spinner" />
           <span>Caricamento...</span>
         </div>
+      ) : (section.id === 14 || section.id === 15) ? (
+        <>
+          {/* ====== VOTO LISTA SPECIALE (Coppola o Belloro) ====== */}
+          {(() => {
+            const specialCandidateId = section.id === 14 ? 18 : 19
+            const candidate = candidates.find(c => c.id === specialCandidateId)
+            const voteRow = votes.find(v => v.candidate_id === specialCandidateId)
+            if (!candidate || !voteRow) return null
+            const key = makeVoteKey(voteRow.id, 'lista')
+            const current = voteRow.lista
+            
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+                <div className="totals-block" style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '30px 20px', gap: '20px' }}>
+                  <h3 className="block-title" style={{ marginBottom: '0' }}>Voti di Lista Totali</h3>
+                  <span className="total-field-count" style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                    {current}
+                  </span>
+                  
+                  <div style={{ display: 'flex', gap: '15px', width: '100%', justifyContent: 'center' }}>
+                    <button
+                      className="vp-remove-btn"
+                      onClick={() => onDec(voteRow.id, 'lista', current)}
+                      disabled={current <= 0 || pending === key}
+                      aria-label="Riduci voto lista"
+                      style={{ flex: 1, minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', border: '2px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.15)', color: 'var(--red)', cursor: 'pointer' }}
+                    >
+                      <Minus size={20} strokeWidth={3} />
+                    </button>
+                    <button
+                      className="vp-vote-btn"
+                      onClick={() => onInc(voteRow.id, 'lista', current)}
+                      disabled={pending === key}
+                      aria-label="Aggiungi voto lista"
+                      style={{ flex: 2, minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '12px', border: '2px solid rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.18)', color: 'var(--green)', cursor: 'pointer', fontWeight: 800 }}
+                    >
+                      <Plus size={22} strokeWidth={3} />
+                      <span>Aggiungi Voto</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+        </>
       ) : (
         <>
           {/* ====== TOTALI SEZIONE (Nulli, Bianchi, Solo Sindaco) ====== */}
